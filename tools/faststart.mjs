@@ -22,7 +22,7 @@
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { basename, extname, join, resolve } from 'node:path'
+import { basename, extname, join, resolve, sep } from 'node:path'
 
 const assetDir = fileURLToPath(new URL('../assets/videos', import.meta.url))
 const stagingDir = fileURLToPath(new URL('../assets/videos/faststart', import.meta.url))
@@ -261,10 +261,16 @@ export function remux(file, target, writeTo) {
  * is exercised on a scratch copy.
  */
 function runCli() {
+  const projectRoot = fileURLToPath(new URL('..', import.meta.url))
   const dirIndex = process.argv.indexOf('--dir')
   const workDir = dirIndex >= 0 && process.argv[dirIndex + 1] !== undefined
     ? resolve(process.argv[dirIndex + 1])
     : assetDir
+  if (workDir !== projectRoot && !workDir.startsWith(projectRoot + sep)) {
+    console.log(`--dir must stay inside the project directory (${projectRoot}); refusing ${workDir}`)
+    process.exitCode = 1
+    return
+  }
   const outDir = dirIndex >= 0 ? join(workDir, 'faststart') : stagingDir
 
   let clips = []
